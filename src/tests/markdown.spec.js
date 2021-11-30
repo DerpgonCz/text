@@ -7,7 +7,8 @@ const markdownThroughEditor = (markdown) => {
 		content: markdownit.render(markdown),
 		enableRichEditing: true
 	})
-	const serializer = createMarkdownSerializer(tiptap.nodes, tiptap.marks)
+	const { nodes, marks } = tiptap.schema
+	const serializer = createMarkdownSerializer(nodes, marks)
 	return serializer.serialize(tiptap.state.doc)
 }
 
@@ -16,7 +17,8 @@ const markdownThroughEditorHtml = (html) => {
 		content: html,
 		enableRichEditing: true
 	})
-	const serializer = createMarkdownSerializer(tiptap.nodes, tiptap.marks)
+	const { nodes, marks } = tiptap.schema
+	const serializer = createMarkdownSerializer(nodes, marks)
 	return serializer.serialize(tiptap.state.doc)
 }
 

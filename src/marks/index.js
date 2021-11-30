@@ -21,230 +21,113 @@
  */
 
 import {
+	markInputRule,
+	markPasteRule,
+} from '@tiptap/core'
+import {
 	Bold,
-	Italic as TipTapItalic,
-	Strike as TipTapStrike,
-	Link as TipTapLink,
-	Underline as TipTapUnderline,
-} from 'tiptap-extensions'
-import { Plugin } from 'tiptap'
-import { getMarkAttrs } from 'tiptap-utils'
-import { markInputRule, markPasteRule } from 'tiptap-commands'
-import { domHref, parseHref } from './../helpers/links'
-import markdownit from './../markdownit'
+	starInputRegex,
+	starPasteRegex,
+	underscoreInputRegex,
+	underscorePasteRegex,
+} from '@tiptap/extension-bold'
+import TipTapItalic from '@tiptap/extension-italic'
+import TipTapStrike from '@tiptap/extension-strike'
+import TipTapUnderline from '@tiptap/extension-underline'
+import Link from './Link'
 
 /**
  * This file maps prosemirror mark names to tiptap classes,
  * so we can reuse the prosemirror-markdown default parser for now
  */
-
-class Strong extends Bold {
-
-	get name() {
-		return 'strong'
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	inputRules({ type }) {
+const Strong = Bold.extend({
+	name: 'strong',
+	addInputRules() {
 		return [
-			markInputRule(/(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))$/, type),
-		]
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	pasteRules({ type }) {
-		return [
-			markPasteRule(/(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))/g, type),
-		]
-	}
-
-}
-
-class Italic extends TipTapItalic {
-
-	get name() {
-		return 'em'
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	inputRules({ type }) {
-		return [
-			markInputRule(/(?:^|\s)((?:\*)((?:[^*]+))(?:\*))$/, type),
-			markInputRule(/(?:^|\s)((?:_)((?:[^_]+))(?:_))$/, type),
-		]
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	pasteRules({ type }) {
-		return [
-			markPasteRule(/(?:^|\s)((?:\*)((?:[^*]+))(?:\*))/g, type),
-			markPasteRule(/(?:^|\s)((?:_)((?:[^_]+))(?:_))/g, type),
-		]
-	}
-
-}
-
-class Strike extends TipTapStrike {
-
-	get schema() {
-		return {
-			parseDOM: [
-				{
-					tag: 's',
-				},
-				{
-					tag: 'del',
-				},
-				{
-					tag: 'strike',
-				},
-				{
-					style: 'text-decoration',
-					getAttrs: value => value === 'line-through',
-				},
-			],
-			toDOM: () => ['s', 0],
-			toMarkdown: {
-				open: '~~',
-				close: '~~',
-				mixable: true,
-				expelEnclosingWhitespace: true,
-			},
-		}
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	inputRules({ type }) {
-		return [
-			markInputRule(/(?:^|\s)((?:~~)((?:[^~]+))(?:~~))$/, type),
-		]
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	pasteRules({ type }) {
-		return [
-			markPasteRule(/(?:^|\s)((?:~~)((?:[^~]+))(?:~~))/g, type),
-		]
-	}
-
-}
-
-class Link extends TipTapLink {
-
-	get schema() {
-		return {
-			attrs: {
-				href: {
-					default: null,
-				},
-			},
-			inclusive: false,
-			parseDOM: [
-				{
-					tag: 'a[href]',
-					getAttrs: dom => ({
-						href: parseHref(dom),
-					}),
-				},
-			],
-			toDOM: node => ['a', {
-				...node.attrs,
-				href: domHref(node),
-				title: node.attrs.href,
-				rel: 'noopener noreferrer nofollow',
-			}, 0],
-		}
-	}
-
-	get plugins() {
-		if (!this.options.openOnClick) {
-			return []
-		}
-
-		return [
-			new Plugin({
-				props: {
-					handleClick: (view, pos, event) => {
-						const { schema } = view.state
-						const attrs = getMarkAttrs(view.state, schema.marks.link)
-
-						const isLink = event.target instanceof HTMLAnchorElement || event.target.parentElement instanceof HTMLAnchorElement
-						if (attrs.href && isLink) {
-							const linkElement = event.target.parentElement instanceof HTMLAnchorElement ? event.target.parentElement : event.target
-							event.stopPropagation()
-							const htmlHref = linkElement.href
-							if (event.button === 0 && !event.ctrlKey && htmlHref.startsWith(window.location.origin)) {
-								const query = OC.parseQueryString(htmlHref)
-								const fragment = OC.parseQueryString(htmlHref.split('#').pop())
-								if (query.dir && fragment.relPath) {
-									const filename = fragment.relPath.split('/').pop()
-									const path = `${query.dir}/${filename}`
-									document.title = `${filename} - ${OC.theme.title}`
-									if (window.location.pathname.match(/apps\/files\/$/)) {
-										// The files app still lacks a popState handler
-										// to allow for using the back button
-										// OC.Util.History.pushState('', htmlHref)
-									}
-									OCA.Viewer.open({ path })
-									return
-								}
-							}
-
-							if (!markdownit.validateLink(htmlHref)) {
-								console.error('Invalid link', htmlHref)
-								return
-							}
-
-							window.open(htmlHref)
-						}
-					},
-				},
+			markInputRule({
+				find: starInputRegex,
+				type: this.type,
 			}),
 		]
-	}
+	},
 
-}
-
-class Underline extends TipTapUnderline {
-
-	get schema() {
-		return {
-			parseDOM: [
-				{
-					tag: 'u',
-				},
-				{
-					style: 'text-decoration',
-					getAttrs: value => value === 'underline',
-				},
-			],
-			toDOM: () => ['u', 0],
-			toMarkdown: {
-				open: '__',
-				close: '__',
-				mixable: true,
-				expelEnclosingWhitespace: true,
-			},
-		}
-	}
-
-	// TODO: remove once we upgraded to tiptap v2
-	inputRules({ type }) {
+	addPasteRules() {
 		return [
-			markInputRule(/(?:^|\s)((?:__)((?:[^__]+))(?:__))$/, type),
+			markPasteRule({
+				find: starPasteRegex,
+				type: this.type,
+			}),
 		]
-	}
+	},
+})
 
-	// TODO: remove once we upgraded to tiptap v2
-	pasteRules({ type }) {
+const Italic = TipTapItalic.extend({
+	name: 'em',
+})
+
+const Underline = TipTapUnderline.extend({
+	parseDOM: [
+		{
+			tag: 'u',
+		},
+		{
+			style: 'text-decoration',
+			getAttrs: value => value === 'underline',
+		},
+	],
+	toDOM: () => ['u', 0],
+	toMarkdown: {
+		open: '__',
+		close: '__',
+		mixable: true,
+		expelEnclosingWhitespace: true,
+	},
+	addInputRules() {
 		return [
-			markPasteRule(/(?:^|\s)((?:__)((?:[^__]+))(?:__))/g, type),
+			markInputRule({
+				find: underscoreInputRegex,
+				type: this.type,
+			}),
 		]
-	}
+	},
 
-}
+	addPasteRules() {
+		return [
+			markPasteRule({
+				find: underscorePasteRegex,
+				type: this.type,
+			}),
+		]
+	},
+
+})
 
 /** Strike is currently unsupported by prosemirror-markdown */
+const Strike = TipTapStrike.extend({
+	parseDOM: [
+		{
+			tag: 's',
+		},
+		{
+			tag: 'del',
+		},
+		{
+			tag: 'strike',
+		},
+		{
+			style: 'text-decoration',
+			getAttrs: value => value === 'line-through',
+		},
+	],
+	toDOM: () => ['s', 0],
+	toMarkdown: {
+		open: '~~',
+		close: '~~',
+		mixable: true,
+		expelEnclosingWhitespace: true,
+	},
+})
+
 export {
 	Strong,
 	Italic,

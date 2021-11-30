@@ -20,8 +20,7 @@
  *
  */
 
-import { Extension } from 'tiptap'
-import { insertText } from 'tiptap-commands'
+import { Extension } from '@tiptap/core'
 
 export default class Emoji extends Extension {
 
@@ -29,8 +28,12 @@ export default class Emoji extends Extension {
 		return 'emoji'
 	}
 
+}
+
+/* Not sure if we still need this... it looks like it's just an alias for insertContent
 	commands() {
 		return emoji => insertText(emoji)
 	}
 
 }
+*/

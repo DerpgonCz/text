@@ -20,7 +20,8 @@
  *
  */
 
-import { Extension, Plugin } from 'tiptap'
+import { Extension } from '@tiptap/core'
+import { Plugin } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import TrackState from './tracking/TrackState'
 import { Span } from './tracking/models'

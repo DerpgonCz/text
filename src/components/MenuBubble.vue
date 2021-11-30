@@ -21,7 +21,7 @@
   -->
 
 <template>
-	<EditorMenuBubble v-slot="{ commands, isActive, getMarkAttrs, menu }"
+	<BubbleMenu v-slot="{ commands, isActive, getMarkAttrs, menu }"
 		class="menububble"
 		:editor="editor"
 		@hide="hideLinkMenu">
@@ -70,11 +70,11 @@
 				</button>
 			</template>
 		</div>
-	</EditorMenuBubble>
+	</BubbleMenu>
 </template>
 
 <script>
-import { EditorMenuBubble } from 'tiptap'
+import { BubbleMenu } from '@tiptap/vue-2'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
 import { getCurrentUser } from '@nextcloud/auth'
 import { optimalPath } from './../helpers/files'
@@ -83,7 +83,7 @@ import { loadState } from '@nextcloud/initial-state'
 export default {
 	name: 'MenuBubble',
 	components: {
-		EditorMenuBubble,
+		BubbleMenu,
 	},
 	directives: {
 		tooltip: Tooltip,

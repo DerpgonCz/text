@@ -18,23 +18,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- */
-import { Editor, Text } from 'tiptap'
-import {
-	HardBreak,
-	Heading,
-	Code,
-	OrderedList,
-	Blockquote,
-	CodeBlock,
-	CodeBlockHighlight,
-	HorizontalRule,
-	History,
-	TrailingNode,
-	Placeholder,
-} from 'tiptap-extensions'
+*/
+import Document from '@tiptap/extension-document'
+import Paragraph from '@tiptap/extension-paragraph'
+import Text from '@tiptap/extension-text'
+import Heading from '@tiptap/extension-heading'
+import History from '@tiptap/extension-history'
+import Blockquote from '@tiptap/extension-blockquote'
+import Codeblock from '@tiptap/extension-code-block'
+import Placeholder from '@tiptap/extension-placeholder'
+import OrderedList from '@tiptap/extension-ordered-list'
+import { Editor } from '@tiptap/core'
 import { Strong, Italic, Strike, Link, Underline } from './marks'
-import { Image, PlainTextDocument, ListItem, BulletList } from './nodes'
+import { Image, PlainTextDocument, BulletList, ListItem } from './nodes'
+// import { Image, PlainTextDocument, ListItem, BulletList } from './nodes'
 import { translate as t } from '@nextcloud/l10n'
 
 import 'proxy-polyfill'
@@ -59,63 +56,71 @@ const loadSyntaxHighlight = async (language) => {
 	return { languages: modules }
 }
 
-const createEditor = ({ content, onInit, onUpdate, extensions, enableRichEditing, languages, currentDirectory }) => {
+const createEditor = ({ content, onCreate, onUpdate, extensions, enableRichEditing, languages, currentDirectory }) => {
 	let richEditingExtensions = []
 	if (enableRichEditing) {
 		richEditingExtensions = [
-			new Heading(),
-			new Code(),
-			new Strong(),
-			new Italic(),
-			new Strike(),
-			new HardBreak(),
-			new HorizontalRule(),
-			new BulletList(),
-			new OrderedList(),
-			new Blockquote(),
-			new CodeBlock(),
-			new ListItem(),
-			new Link({
-				openOnClick: true,
-			}),
-			new Underline(),
-			new Image({ currentDirectory }),
-			new Placeholder({
+			Document,
+			Paragraph,
+			Heading,
+			Strong,
+			Italic,
+			Strike,
+			Link.configure({ openOnClick: true }),
+			Blockquote,
+			Codeblock,
+			OrderedList,
+			BulletList,
+			ListItem,
+			Underline,
+			Image.configure({ currentDirectory }),
+			Placeholder.configure({
 				emptyNodeClass: 'is-empty',
-				emptyNodeText: t('text', 'Add notes, lists or links …'),
+				placeholder: t('text', 'Add notes, lists or links …'),
 				showOnlyWhenEditable: true,
 			}),
-			new TrailingNode({
-				node: 'paragraph',
-				notAfter: ['paragraph'],
-			}),
+			// TODO: replace this
+			// https://github.com/ueberdosis/tiptap/tree/main/demos/src/Experiments/TrailingNode
+			// new TrailingNode({ node: 'paragraph', notAfter: ['paragraph'], }),
 		]
 	} else {
 		richEditingExtensions = [
-			new PlainTextDocument(),
-			new Text(),
-			new CodeBlockHighlight({
-				...languages,
-			}),
+			PlainTextDocument,
+			Codeblock,
+			// FIXME: Do we want to use CodeBlockLowlight instead?
+			// new CodeBlockHighlight({ ...languages, }),
 		]
 	}
 	extensions = extensions || []
 	return new Editor({
 		content,
-		onInit,
+		onCreate,
 		onUpdate,
 		extensions: [
+			Text,
+			History,
 			...richEditingExtensions,
-			new History(),
 		].concat(extensions),
-		useBuiltInExtensions: enableRichEditing,
 	})
 }
 
 const SerializeException = function(message) {
 	this.message = message
 }
+
+const convertNames = (object) => {
+	const convert = (name) => {
+		return name.replace(/_(\w)/g, (_m, letter) => letter.toUpperCase())
+	}
+	return Object.fromEntries(
+		Object.entries(object)
+			.map(([name, value]) => [convert(name), value])
+	)
+}
+
 const createMarkdownSerializer = (_nodes, _marks) => {
+	const defaultNodes = convertNames(defaultMarkdownSerializer.nodes)
+	const defaultMarks = convertNames(defaultMarkdownSerializer.marks)
 	const nodes = Object
 		.entries(_nodes)
 		.filter(([, node]) => node.toMarkdown)
@@ -133,8 +138,8 @@ const createMarkdownSerializer = (_nodes, _marks) => {
 		}), {})
 	return {
 		serializer: new MarkdownSerializer(
-			{ ...defaultMarkdownSerializer.nodes, ...nodes },
-			{ ...defaultMarkdownSerializer.marks, ...marks }
+			{ ...defaultNodes, ...nodes },
+			{ ...defaultMarks, ...marks }
 		),
 		serialize(content, options) {
 			return this.serializer.serialize(content, { ...options, tightLists: true })

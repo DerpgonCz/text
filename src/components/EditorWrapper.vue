@@ -35,7 +35,7 @@
 		</div>
 		<div v-if="displayed" id="editor-wrapper" :class="{'has-conflicts': hasSyncCollission, 'icon-loading': !initialLoading && !hasConnectionIssue, 'richEditor': isRichEditor, 'show-color-annotations': showAuthorAnnotations}">
 			<div id="editor">
-				<MenuBar v-if="!syncError && !readOnly"
+				<MenuBar v-if="tiptap && !syncError && !readOnly"
 					ref="menubar"
 					:editor="tiptap"
 					:sync-service="syncService"
@@ -56,10 +56,12 @@
 					<slot name="header" />
 				</MenuBar>
 				<div ref="contentWrapper" class="content-wrapper">
+					<!--
 					<MenuBubble v-if="!readOnly && isRichEditor"
 						:editor="tiptap"
 						:content-wrapper="contentWrapper"
 						:file-path="relativePath" />
+					-->
 					<EditorContent v-show="initialLoading"
 						class="editor__content"
 						:editor="tiptap" />
@@ -86,9 +88,9 @@ import { extensionHighlight } from '../helpers/mappings'
 import { createEditor, createMarkdownSerializer, serializePlainText, loadSyntaxHighlight } from './../EditorFactory'
 import markdownit from './../markdownit'
 
-import { EditorContent } from 'tiptap'
-import { Collaboration } from 'tiptap-extensions'
-import { Emoji, Keymap, UserColor } from './../extensions'
+import { EditorContent } from '@tiptap/vue-2'
+// import { Emoji, UserColor } from './../extensions'
+import { Collaboration, Keymap } from './../extensions'
 import isMobile from './../mixins/isMobile'
 import store from './../mixins/store'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
@@ -102,10 +104,10 @@ export default {
 	components: {
 		EditorContent,
 		MenuBar: () => import(/* webpackChunkName: "editor-rich" */'./MenuBar'),
-		MenuBubble: () => import(/* webpackChunkName: "editor-rich" */'./MenuBubble'),
+		// MenuBubble: () => import(/* webpackChunkName: "editor-rich" */'./MenuBubble'),
 		ReadOnlyEditor: () => import(/* webpackChunkName: "editor" */'./ReadOnlyEditor'),
 		CollisionResolveDialog: () => import(/* webpackChunkName: "editor" */'./CollisionResolveDialog'),
-		GuestNameDialog: () => import(/* webpackChunkName: "editor-guest" */'./GuestNameDialog'),
+		// GuestNameDialog: () => import(/* webpackChunkName: "editor-guest" */'./GuestNameDialog'),
 		SessionList: () => import(/* webpackChunkName: "editor-collab" */'./SessionList'),
 		HelpModal: () => import(/* webpackChunkName: "editor-collab" */'./HelpModal'),
 	},
@@ -299,7 +301,8 @@ export default {
 				forceRecreate: this.forceRecreate,
 				serialize: (document) => {
 					if (this.isRichEditor) {
-						return (createMarkdownSerializer(this.tiptap.nodes, this.tiptap.marks)).serialize(document)
+						const { nodes, marks } = this.tiptap.schema
+						return (createMarkdownSerializer(nodes, marks)).serialize(document)
 					}
 					return serializePlainText(this.tiptap)
 
@@ -331,17 +334,17 @@ export default {
 					loadSyntaxHighlight(extensionHighlight[this.fileExtension] || this.fileExtension).then((languages) => {
 						this.tiptap = createEditor({
 							content,
-							onInit: ({ state }) => {
-								this.syncService.state = state
+							onCreate: ({ editor }) => {
+								this.syncService.state = editor.state
 								this.syncService.startSync()
 							},
-							onUpdate: ({ state }) => {
-								this.syncService.state = state
+							onUpdate: ({ editor }) => {
+								this.syncService.state = editor.state
 							},
 							extensions: [
-								new Collaboration({
-								// the initial version we start with
-								// version is an integer which is incremented with every change
+								Collaboration.configure({
+									// the initial version we start with
+									// version is an integer which is incremented with every change
 									version: this.document.initialVersion,
 									clientID: this.currentSession.id,
 									// debounce changes so we can save some bandwidth
@@ -353,11 +356,9 @@ export default {
 									},
 									update: ({ steps, version, editor }) => {
 										const { state, view, schema } = editor
-
 										if (getVersion(state) > version) {
 											return
 										}
-
 										const tr = receiveTransaction(
 											state,
 											steps.map(item => Step.fromJSON(schema, item.step)),
@@ -367,6 +368,14 @@ export default {
 										view.dispatch(tr)
 									},
 								}),
+								Keymap.configure({
+									'Mod-s': () => {
+										this.syncService.save()
+										return true
+									},
+								}),
+							],
+							/* TODO: bring back our extensions
 								new UserColor({
 									clientID: this.currentSession.id,
 									color: (clientID) => {
@@ -378,14 +387,9 @@ export default {
 										return session?.userId ? session.userId : session?.guestName
 									},
 								}),
-								new Keymap({
-									'Mod-s': () => {
-										this.syncService.save()
-										return true
-									},
-								}),
 								new Emoji(),
 							],
+							*/
 							enableRichEditing: this.isRichEditor,
 							languages,
 							currentDirectory: this.currentDirectory,
@@ -402,7 +406,8 @@ export default {
 				.on('sync', ({ steps, document }) => {
 					this.hasConnectionIssue = false
 					try {
-						this.tiptap.extensions.options.collaboration.update({
+						const collaboration = this.tiptap.extensionManager.extensions.find(e => e.name === 'collaboration')
+						collaboration.options.update({
 							version: document.currentVersion,
 							steps,
 							editor: this.tiptap,
