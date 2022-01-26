@@ -20,20 +20,29 @@
  *
  */
 
-import TipTapItalic from '@tiptap/extension-italic'
-import Link from './Link'
-import Strike from './Strike'
-import Strong from './Strong'
-import Underline from './Underline'
+import { markInputRule, markPasteRule } from '@tiptap/core'
+import { Bold, starInputRegex, starPasteRegex } from '@tiptap/extension-bold'
 
-const Italic = TipTapItalic.extend({
-	name: 'em',
+const Strong = Bold.extend({
+	name: 'strong',
+
+	addInputRules() {
+		return [
+			markInputRule({
+				find: starInputRegex,
+				type: this.type,
+			}),
+		]
+	},
+
+	addPasteRules() {
+		return [
+			markPasteRule({
+				find: starPasteRegex,
+				type: this.type,
+			}),
+		]
+	},
 })
 
-export {
-	Strong,
-	Italic,
-	Strike,
-	Link,
-	Underline,
-}
+export default Strong

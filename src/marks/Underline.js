@@ -20,20 +20,55 @@
  *
  */
 
-import TipTapItalic from '@tiptap/extension-italic'
-import Link from './Link'
-import Strike from './Strike'
-import Strong from './Strong'
-import Underline from './Underline'
+import TipTapUnderline from '@tiptap/extension-underline'
+import { markInputRule, markPasteRule } from '@tiptap/core'
+import { underscoreInputRegex, underscorePasteRegex } from '@tiptap/extension-bold'
 
-const Italic = TipTapItalic.extend({
-	name: 'em',
+const Underline = TipTapUnderline.extend({
+
+	parseHTML() {
+		return [
+			{
+				tag: 'u',
+			},
+			{
+				style: 'text-decoration',
+				getAttrs: value => value === 'underline',
+			},
+		]
+	},
+
+	renderHTML() {
+		return ['u', 0]
+	},
+
+	toMarkdown() {
+		return {
+			open: '__',
+			close: '__',
+			mixable: true,
+			expelEnclosingWhitespace: true,
+		}
+	},
+
+	addInputRules() {
+		return [
+			markInputRule({
+				find: underscoreInputRegex,
+				type: this.type,
+			}),
+		]
+	},
+
+	addPasteRules() {
+		return [
+			markPasteRule({
+				find: underscorePasteRegex,
+				type: this.type,
+			}),
+		]
+	},
+
 })
 
-export {
-	Strong,
-	Italic,
-	Strike,
-	Link,
-	Underline,
-}
+export default Underline

@@ -20,20 +20,37 @@
  *
  */
 
-import TipTapItalic from '@tiptap/extension-italic'
-import Link from './Link'
-import Strike from './Strike'
-import Strong from './Strong'
-import Underline from './Underline'
+import TipTapStrike from '@tiptap/extension-strike'
 
-const Italic = TipTapItalic.extend({
-	name: 'em',
+export default TipTapStrike.extend({
+
+	parseHTML() {
+		return [
+			{
+				tag: 's',
+			},
+			{
+				tag: 'del',
+			},
+			{
+				tag: 'strike',
+			},
+			{
+				style: 'text-decoration',
+				getAttrs: value => value === 'line-through',
+			},
+		]
+	},
+
+	renderHTML() {
+		return ['s', 0]
+	},
+
+	/** Strike is currently unsupported by prosemirror-markdown */
+	toMarkdown: {
+		open: '~~',
+		close: '~~',
+		mixable: true,
+		expelEnclosingWhitespace: true,
+	},
 })
-
-export {
-	Strong,
-	Italic,
-	Strike,
-	Link,
-	Underline,
-}
