@@ -31,12 +31,11 @@ import OrderedList from '@tiptap/extension-ordered-list'
 import { Editor } from '@tiptap/core'
 import { Strong, Italic, Strike, Link, Underline } from './marks'
 import { Image, PlainTextDocument, BulletList, ListItem } from './nodes'
+import { Markdown } from './extensions'
 // import { Image, PlainTextDocument, ListItem, BulletList } from './nodes'
 import { translate as t } from '@nextcloud/l10n'
 
 import 'proxy-polyfill'
-
-import { MarkdownSerializer, defaultMarkdownSerializer } from 'prosemirror-markdown'
 
 const loadSyntaxHighlight = async (language) => {
 	const languages = [language]
@@ -60,6 +59,7 @@ const createEditor = ({ content, onCreate, onUpdate, extensions, enableRichEditi
 	let richEditingExtensions = []
 	if (enableRichEditing) {
 		richEditingExtensions = [
+			Markdown,
 			Document,
 			Paragraph,
 			Heading,
@@ -108,47 +108,6 @@ const SerializeException = function(message) {
 	this.message = message
 }
 
-const convertNames = (object) => {
-	const convert = (name) => {
-		return name.replace(/_(\w)/g, (_m, letter) => letter.toUpperCase())
-	}
-	return Object.fromEntries(
-		Object.entries(object)
-			.map(([name, value]) => [convert(name), value])
-	)
-}
-
-const createMarkdownSerializer = (_nodes, _marks) => {
-	const defaultNodes = convertNames(defaultMarkdownSerializer.nodes)
-	const defaultMarks = convertNames(defaultMarkdownSerializer.marks)
-	const nodes = Object
-		.entries(_nodes)
-		.filter(([, node]) => node.toMarkdown)
-		.reduce((items, [name, { toMarkdown }]) => ({
-			...items,
-			[name]: toMarkdown,
-		}), {})
-
-	const marks = Object
-		.entries(_marks)
-		.filter(([, node]) => node.toMarkdown)
-		.reduce((items, [name, { toMarkdown }]) => ({
-			...items,
-			[name]: toMarkdown,
-		}), {})
-	return {
-		serializer: new MarkdownSerializer(
-			{ ...defaultNodes, ...nodes },
-			{ ...defaultMarks, ...marks }
-		),
-		serialize(content, options) {
-			return this.serializer.serialize(content, { ...options, tightLists: true })
-				.split('\\[').join('[')
-				.split('\\]').join(']')
-		},
-	}
-}
-
 const serializePlainText = (tiptap) => {
 	const doc = tiptap.getJSON()
 
@@ -166,4 +125,4 @@ const serializePlainText = (tiptap) => {
 }
 
 export default createEditor
-export { createEditor, createMarkdownSerializer, serializePlainText, loadSyntaxHighlight }
+export { createEditor, serializePlainText, loadSyntaxHighlight }

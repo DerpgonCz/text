@@ -24,10 +24,12 @@
 import Keymap from './Keymap'
 // import UserColor from './UserColor'
 import Collaboration from './Collaboration'
+import Markdown from './Markdown'
 
 export {
 	// Emoji,
 	Keymap,
 	// UserColor,
 	Collaboration,
+	Markdown,
 }

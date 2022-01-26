@@ -42,13 +42,11 @@ const Underline = TipTapUnderline.extend({
 		return ['u', 0]
 	},
 
-	toMarkdown() {
-		return {
-			open: '__',
-			close: '__',
-			mixable: true,
-			expelEnclosingWhitespace: true,
-		}
+	toMarkdown: {
+		open: '__',
+		close: '__',
+		mixable: true,
+		expelEnclosingWhitespace: true,
 	},
 
 	addInputRules() {

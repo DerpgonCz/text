@@ -85,7 +85,8 @@ import moment from '@nextcloud/moment'
 import { SyncService, ERROR_TYPE, IDLE_TIMEOUT } from './../services/SyncService'
 import { endpointUrl, getRandomGuestName } from './../helpers'
 import { extensionHighlight } from '../helpers/mappings'
-import { createEditor, createMarkdownSerializer, serializePlainText, loadSyntaxHighlight } from './../EditorFactory'
+import { createEditor, serializePlainText, loadSyntaxHighlight } from './../EditorFactory'
+import { createMarkdownSerializer } from './../extensions/Markdown'
 import markdownit from './../markdownit'
 
 import { EditorContent } from '@tiptap/vue-2'
@@ -301,8 +302,7 @@ export default {
 				forceRecreate: this.forceRecreate,
 				serialize: (document) => {
 					if (this.isRichEditor) {
-						const { nodes, marks } = this.tiptap.schema
-						return (createMarkdownSerializer(nodes, marks)).serialize(document)
+						return (createMarkdownSerializer(this.tiptap.schema)).serialize(document)
 					}
 					return serializePlainText(this.tiptap)
 
