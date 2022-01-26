@@ -124,6 +124,7 @@ describe('Markdown serializer from html', () => {
 	})
 	test('images', () => {
 		expect(markdownThroughEditorHtml('<img src="image" alt="description" />')).toBe('![description](image)')
+		expect(markdownThroughEditorHtml('<p><img src="image" alt="description" /></p>')).toBe('![description](image)')
 	})
 	test('checkboxes', () => {
 		expect(markdownThroughEditorHtml('<ul><li><input type="checkbox" checked /><label>foo</label></li></ul>')).toBe('* [x] foo')

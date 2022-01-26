@@ -1,7 +1,8 @@
 import { Markdown } from './../../extensions';
 import { createMarkdownSerializer } from './../../extensions/Markdown';
 import Underline from './../../marks/Underline';
-import { BulletList, ListItem, Image } from './../../nodes'
+import { BulletList, ListItem } from './../../nodes'
+import Image from '@tiptap/extension-image'
 import { Editor, getExtensionField } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
@@ -40,7 +41,7 @@ describe('Markdown extension', () => {
 
 	it('serializes nodes with the default prosemirror way', () => {
 		const editor = createEditor({ content: `
-			<img alt="Hello" src="test" />
+			<p><img alt="Hello" src="test" /></p>
 		` })
 		const serializer = createMarkdownSerializer(editor.schema)
 		expect(serializer.serialize(editor.state.doc)).toBe('![Hello](test)')
@@ -59,7 +60,7 @@ function createEditor({ content } = { content: '' }) {
 			Underline,
 			BulletList,
 			ListItem,
-			Image,
+			Image.configure({inline: true}),
 		]
 	})
 }

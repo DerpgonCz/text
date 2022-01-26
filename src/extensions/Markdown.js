@@ -28,7 +28,7 @@
  * this extension will extend the prosemirror schema for nodes and marks
  * with a `toMarkdown` specification if that is defined in a tiptap extension.
  *
- * For nodes `toMarkown` should be function 
+ * For nodes `toMarkown` should be function
  * that take a serializer state and such a node, and serializes the node.
  *
  * For marks `toMarkdown` is an object with open and close properties,
@@ -38,7 +38,7 @@
  * https://github.com/ProseMirror/prosemirror-markdown#class-markdownserializer
  */
 
-import { Extension, getExtensionField, } from '@tiptap/core'
+import { Extension, getExtensionField } from '@tiptap/core'
 import { MarkdownSerializer, defaultMarkdownSerializer } from 'prosemirror-markdown'
 
 const Markdown = Extension.create({

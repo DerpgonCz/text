@@ -73,7 +73,7 @@ const createEditor = ({ content, onCreate, onUpdate, extensions, enableRichEditi
 			BulletList,
 			ListItem,
 			Underline,
-			Image.configure({ currentDirectory }),
+			Image.configure({ currentDirectory, inline: true }),
 			Placeholder.configure({
 				emptyNodeClass: 'is-empty',
 				placeholder: t('text', 'Add notes, lists or links …'),
