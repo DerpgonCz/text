@@ -21,7 +21,7 @@
   -->
 
 <template>
-	<div class="menubar" :class="{ 'is-focused': editor.focused, 'autohide': autohide }">
+	<div class="menubar" :class="{ 'show': isVisible, 'autohide': autohide }">
 		<input
 			ref="imageFileInput"
 			type="file"
@@ -38,14 +38,16 @@
 					<button v-tooltip="t('text', 'Insert emoji')"
 						class="icon-emoji"
 						:aria-label="t('text', 'Insert emoji')"
-						:aria-haspopup="true" />
+						:aria-haspopup="true"
+						@click="toggleChildMenu(icon)" />
 				</EmojiPicker>
 				<Actions v-else-if="icon.class === 'icon-image'"
 					:key="icon.label"
 					ref="imageActions"
 					class="submenu"
 					:default-icon="'icon-image'"
-					@close="onImageActionClose">
+					@open="toggleChildMenu(icon)"
+					@close="onImageActionClose; toggleChildMenu(icon)">
 					<button slot="icon"
 						:class="{ 'icon-image': true, 'loading-small': uploadingImage }"
 						:title="icon.label"
@@ -101,7 +103,9 @@
 					</div>
 				</template>
 			</template>
-			<Actions>
+			<Actions
+				@open="toggleChildMenu({ label: 'Remaining Actions' })"
+				@close="toggleChildMenu({ label: 'Remaining Actions' })">
 				<template v-for="(icon, $index) in allIcons">
 					<ActionButton v-if="icon.class && isHiddenInMenu($index) && !(icon.class === 'icon-emoji')"
 						:key="icon.class"
@@ -238,6 +242,10 @@ export default {
 				return this.editor.isActive(...args)
 			}
 		},
+		isVisible() {
+			return this.editor.isFocused
+				|| Object.values(this.submenuVisibility).find((v) => v)
+		},
 		disabled() {
 			return (menuItem) => {
 				return false
@@ -323,6 +331,9 @@ export default {
 				this.forceRecompute++
 			})
 		},
+		refocus() {
+			this.editor.chain().focus().run()
+		},
 		clickIcon(icon) {
 			// Some actions run themselves.
 			// others still need to have .run() called upon them.
@@ -335,12 +346,16 @@ export default {
 		getWindowHeight(event) {
 			this.windowHeight = document.documentElement.clientHeight
 		},
-		hideChildMenu(icon) {
-			this.$set(this.submenuVisibility, icon.label, false)
+		hideChildMenu({ label }) {
+			this.$set(this.submenuVisibility, label, false)
+			this.refocus()
 		},
-		toggleChildMenu(icon) {
-			const lastValue = Object.prototype.hasOwnProperty.call(this.submenuVisibility, icon.label) ? this.submenuVisibility[icon.label] : false
-			this.$set(this.submenuVisibility, icon.label, !lastValue)
+		toggleChildMenu({ label }) {
+			const lastValue = Object.prototype.hasOwnProperty.call(this.submenuVisibility, label) ? this.submenuVisibility[label] : false
+			this.$set(this.submenuVisibility, label, !lastValue)
+			if (lastValue) {
+				this.refocus()
+			}
 		},
 		onImageActionClose() {
 			this.showImageLinkPrompt = false
@@ -512,7 +527,7 @@ export default {
 			visibility: hidden;
 			opacity: 0;
 			transition: visibility 0.2s 0.4s, opacity 0.2s 0.4s;
-			&.is-focused {
+			&.show {
 				visibility: visible;
 				opacity: 1;
 			}
