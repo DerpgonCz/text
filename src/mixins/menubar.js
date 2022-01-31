@@ -62,9 +62,9 @@ export default [
 		keyChar: 'u',
 		keyModifiers: ['ctrl'],
 		class: 'icon-underline',
-		isActive: (isActive) => isActive.underline(),
+		isActive: 'underline',
 		action: (command) => {
-			return command.underline()
+			return command.toggleUnderline()
 		},
 	},
 	{
