@@ -139,7 +139,7 @@ const ListItem = TipTapListItem.extend({
 						}
 
 						tr.doc.nodesBetween(tr.selection.from, tr.selection.to, (node, pos) => {
-							if (node.type === schema.nodes.list_item) {
+							if (node.type === schema.nodes.listItem) {
 								tr.setNodeMarkup(pos, node.type, {
 									type: parentList.node.attrs.type === TYPES.CHECKBOX ? TYPES.BULLET : TYPES.CHECKBOX,
 								})
