@@ -56,12 +56,10 @@
 					<slot name="header" />
 				</MenuBar>
 				<div ref="contentWrapper" class="content-wrapper">
-					<!--
-					<MenuBubble v-if="!readOnly && isRichEditor"
+					<MenuBubble v-if="tiptap && !readOnly && isRichEditor"
 						:editor="tiptap"
 						:content-wrapper="contentWrapper"
 						:file-path="relativePath" />
-					-->
 					<EditorContent v-show="initialLoading"
 						class="editor__content"
 						:editor="tiptap" />
@@ -105,7 +103,7 @@ export default {
 	components: {
 		EditorContent,
 		MenuBar: () => import(/* webpackChunkName: "editor-rich" */'./MenuBar'),
-		// MenuBubble: () => import(/* webpackChunkName: "editor-rich" */'./MenuBubble'),
+		MenuBubble: () => import(/* webpackChunkName: "editor-rich" */'./MenuBubble'),
 		ReadOnlyEditor: () => import(/* webpackChunkName: "editor" */'./ReadOnlyEditor'),
 		CollisionResolveDialog: () => import(/* webpackChunkName: "editor" */'./CollisionResolveDialog'),
 		// GuestNameDialog: () => import(/* webpackChunkName: "editor-guest" */'./GuestNameDialog'),

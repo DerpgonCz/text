@@ -21,14 +21,13 @@
   -->
 
 <template>
-	<BubbleMenu v-slot="{ commands, isActive, getMarkAttrs, menu }"
-		class="menububble"
+	<BubbleMenu
 		:editor="editor"
-		@hide="hideLinkMenu">
+		:tippy-options="{onHide: onHide, onShown: onShown, placement: 'bottom'}">
 		<div class="menububble"
-			:class="{ 'is-active': menu.isActive }"
-			:style="bubblePosition(menu)">
-			<form v-if="linkMenuIsActive" class="menububble__form" @submit.prevent="setLinkUrl(commands.link, linkUrl)">
+			:class="{ 'is-active': isVisible }">
+			<!-- :style="bubblePosition(menu)"> -->
+			<form v-if="linkMenuIsActive" class="menububble__form" @submit.prevent="setLinkUrl()">
 				<input ref="linkInput"
 					v-model="linkUrl"
 					class="menububble__input"
@@ -38,31 +37,31 @@
 				<button class="menububble__button icon-confirm"
 					type="button"
 					tabindex="0"
-					@click="setLinkUrl(commands.link, linkUrl)" />
+					@click="setLinkUrl()" />
 			</form>
 
 			<template v-else>
 				<button
 					class="menububble__button"
-					:class="{ 'is-active': isActive.link() }"
-					@click="showLinkMenu(getMarkAttrs('link'))">
+					:class="{ 'is-active': isActive('link') }"
+					@click="showLinkMenu()">
 					<span class="icon-link" />
 					<span class="menububble__buttontext">
-						{{ isActive.link() ? t('text', 'Update Link') : t('text', 'Add Link') }}
+						{{ isActive('link') ? t('text', 'Update Link') : t('text', 'Add Link') }}
 					</span>
 				</button>
 				<button v-if="!isUsingDirectEditing"
 					class="menububble__button"
-					:class="{ 'is-active': isActive.link() }"
-					@click="selectFile(commands.link)">
+					:class="{ 'is-active': isActive('link') }"
+					@click="selectFile()">
 					<span class="icon-file" />
 					<span class="menububble__buttontext">{{ t('text', 'Link file') }}</span>
 				</button>
 				<button
-					v-if="isActive.link()"
+					v-if="isActive('link')"
 					class="menububble__button"
-					:class="{ 'is-active': isActive.link() }"
-					@click="removeLinkUrl(commands.link, linkUrl)">
+					:class="{ 'is-active': isActive('link') }"
+					@click="removeLinkUrl()">
 					<span class="icon-delete" />
 					<span class="menububble__buttontext">
 						{{ t('text', 'Remove Link') }}
@@ -75,6 +74,7 @@
 
 <script>
 import { BubbleMenu } from '@tiptap/vue-2'
+import { getMarkAttributes } from '@tiptap/core'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
 import { getCurrentUser } from '@nextcloud/auth'
 import { optimalPath } from './../helpers/files'
@@ -91,8 +91,7 @@ export default {
 	props: {
 		editor: {
 			type: Object,
-			required: false,
-			default: null,
+			required: true,
 		},
 		// used to calculate the position based on the scrollOffset
 		contentWrapper: {
@@ -111,6 +110,7 @@ export default {
 			linkUrl: null,
 			linkMenuIsActive: false,
 			isUsingDirectEditing: loadState('text', 'directEditingToken', null) !== null,
+			isVisible: false,
 		}
 	},
 	computed: {
@@ -120,7 +120,7 @@ export default {
 		// during the bubblePosition calculation it has not been rendered yet.
 		// so we have to hard code the minimum.
 		minLeft() {
-			if (this.linkMenuIsActive || !this.editor.isActive.link()) {
+			if (this.linkMenuIsActive || !this.isActive('link')) {
 				return 150
 			} else {
 				return 225
@@ -129,7 +129,8 @@ export default {
 
 	},
 	methods: {
-		showLinkMenu(attrs) {
+		showLinkMenu() {
+			const attrs = getMarkAttributes(this.editor.state, 'link')
 			this.linkUrl = attrs.href
 			this.linkMenuIsActive = true
 			this.$nextTick(() => {
@@ -140,7 +141,14 @@ export default {
 			this.linkUrl = null
 			this.linkMenuIsActive = false
 		},
-		selectFile(command) {
+		onHide() {
+			this.hideLinkMenu()
+			this.isVisible = false
+		},
+		onShown() {
+			this.isVisible = true
+		},
+		selectFile() {
 			const currentUser = getCurrentUser()
 			if (!currentUser) {
 				return
@@ -151,12 +159,14 @@ export default {
 				client.getFileInfo(file).then((_status, fileInfo) => {
 					const path = optimalPath(this.filePath, `${fileInfo.path}/${fileInfo.name}`)
 					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
-					command({ href: `${encodedPath}?fileId=${fileInfo.id}` })
+					const href = `${encodedPath}?fileId=${fileInfo.id}`
+					this.editor.chain().setLink({ href }).focus().run()
 					this.hideLinkMenu()
 				})
 			}, false, [], true, undefined, startPath)
 		},
-		setLinkUrl(command, url) {
+		setLinkUrl() {
+			let url = this.linkUrl
 			// Heuristics for determining if we need a https:// prefix.
 			const noPrefixes = [
 				/^[a-zA-Z]+:/, // url with protocol ("mailTo:email@domain.tld")
@@ -171,13 +181,12 @@ export default {
 			}
 
 			// Avoid issues when parsing urls later on in markdown that might be entered in an invalid format (e.g. "mailto: example@example.com")
-			url.replaceAll(' ', '%20')
-
-			command({ href: url })
+			const href = url.replaceAll(' ', '%20')
+			this.editor.chain().setLink({ href }).focus().run()
 			this.hideLinkMenu()
 		},
-		removeLinkUrl(command, url) {
-			command({ href: null })
+		removeLinkUrl() {
+			this.editor.chain().unsetLink().focus().run()
 		},
 		bubblePosition(menu) {
 			const left = Math.max(this.minLeft, menu.left)
@@ -186,6 +195,9 @@ export default {
 				top: `${menu.top + offset + 5}px`,
 				left: `${left}px`,
 			}
+		},
+		isActive(selector, args = {}) {
+			return this.editor.isActive(selector, args)
 		},
 
 	},

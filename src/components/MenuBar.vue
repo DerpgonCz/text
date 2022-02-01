@@ -348,7 +348,6 @@ export default {
 		},
 		hideChildMenu({ label }) {
 			this.$set(this.submenuVisibility, label, false)
-			this.refocus()
 		},
 		toggleChildMenu({ label }) {
 			const lastValue = Object.prototype.hasOwnProperty.call(this.submenuVisibility, label) ? this.submenuVisibility[label] : false
