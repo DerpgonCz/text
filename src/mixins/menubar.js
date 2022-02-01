@@ -26,7 +26,6 @@ export default [
 		keyChar: 'z',
 		keyModifiers: ['ctrl'],
 		class: 'icon-undo',
-		isDisabled: (command) => command.undoDepth() === 0,
 		action: (command) => command.undo(),
 	},
 	{
@@ -34,7 +33,6 @@ export default [
 		keyChar: 'y',
 		keyModifiers: ['ctrl'],
 		class: 'icon-redo',
-		isDisabled: (command) => command.redoDepth() === 0,
 		action: (command) => command.redo(),
 	},
 	{

@@ -148,6 +148,7 @@ const ListItem = TipTapListItem.extend({
 						tr.scrollIntoView()
 					})
 					.run()
+				return true
 			},
 		}
 	},

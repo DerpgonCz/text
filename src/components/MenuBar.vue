@@ -57,14 +57,14 @@
 						icon="icon-upload"
 						:close-after-click="true"
 						:disabled="uploadingImage"
-						@click="onUploadImage(commands.image)">
+						@click="onUploadImage()">
 						{{ t('text', 'Upload from computer') }}
 					</ActionButton>
 					<ActionButton v-if="!isPublic"
 						icon="icon-folder"
 						:close-after-click="true"
 						:disabled="uploadingImage"
-						@click="showImagePrompt(commands.image)">
+						@click="showImagePrompt()">
 						{{ t('text', 'Insert from Files') }}
 					</ActionButton>
 					<ActionButton v-if="!showImageLinkPrompt"
@@ -78,7 +78,7 @@
 						icon="icon-link"
 						:value="imageLink"
 						@update:value="onImageLinkUpdateValue"
-						@submit="onImageLinkSubmit(commands.image)">
+						@submit="onImageLinkSubmit()">
 						{{ t('text', 'Image link to insert') }}
 					</ActionInput>
 				</Actions>
@@ -248,9 +248,7 @@ export default {
 		},
 		disabled() {
 			return (menuItem) => {
-				return false
-				// FIXME with this we seem to be running into an endless rerender loop, so this needs more investigation at some later point
-				// typeof menuItem.isDisabled === 'function' ? menuItem.isDisabled()(commands) : false
+				return menuItem.action && !menuItem.action(this.editor.can())
 			}
 		},
 		isChildMenuVisible() {
@@ -265,9 +263,7 @@ export default {
 			}, {
 				label: t('text', 'Formatting help'),
 				class: 'icon-info',
-				isActive: () => {
-				},
-				action: (commands) => {
+				click: () => {
 					this.$emit('show-help')
 				},
 			}]
@@ -281,7 +277,7 @@ export default {
 						icon: icon.class,
 						active: this.isActive(icon),
 						action: () => {
-							icon.action(this.editor.commands)
+							this.clickIcon(icon)
 							this.hideChildMenu(parent)
 						},
 					}
@@ -335,6 +331,9 @@ export default {
 			this.editor.chain().focus().run()
 		},
 		clickIcon(icon) {
+			if (icon.click) {
+				return icon.click()
+			}
 			// Some actions run themselves.
 			// others still need to have .run() called upon them.
 			const action = icon.action(this.editor.chain().focus())
@@ -359,8 +358,7 @@ export default {
 		onImageActionClose() {
 			this.showImageLinkPrompt = false
 		},
-		onUploadImage(command) {
-			this.imageCommand = command
+		onUploadImage() {
 			this.$refs.imageFileInput.click()
 		},
 		onImageUploadFilePicked(event) {
@@ -369,7 +367,6 @@ export default {
 			const image = files[0]
 			if (!imageMimes.includes(image.type)) {
 				showError(t('text', 'Image format not supported'))
-				this.imageCommand = null
 				this.uploadingImage = false
 				return
 			}
@@ -379,12 +376,11 @@ export default {
 			event.target.value = ''
 
 			this.syncService.uploadImage(image).then((response) => {
-				this.insertAttachmentImage(response.data?.name, response.data?.id, this.imageCommand)
+				this.insertAttachmentImage(response.data?.name, response.data?.id)
 			}).catch((error) => {
 				console.error(error)
 				showError(error?.response?.data?.error)
 			}).then(() => {
-				this.imageCommand = null
 				this.uploadingImage = false
 			})
 		},
@@ -392,7 +388,7 @@ export default {
 			// this avoids the input being reset on each file polling
 			this.imageLink = newImageLink
 		},
-		onImageLinkSubmit(command) {
+		onImageLinkSubmit() {
 			if (!this.imageLink) {
 				return
 			}
@@ -401,7 +397,7 @@ export default {
 			this.$refs.imageActions[0].closeMenu()
 
 			this.syncService.insertImageLink(this.imageLink).then((response) => {
-				this.insertAttachmentImage(response.data?.name, response.data?.id, command)
+				this.insertAttachmentImage(response.data?.name, response.data?.id)
 			}).catch((error) => {
 				console.error(error)
 				showError(error?.response?.data?.error)
@@ -410,12 +406,12 @@ export default {
 				this.imageLink = ''
 			})
 		},
-		onImagePathSubmit(imagePath, command) {
+		onImagePathSubmit(imagePath) {
 			this.uploadingImage = true
 			this.$refs.imageActions[0].closeMenu()
 
 			this.syncService.insertImageFile(imagePath).then((response) => {
-				this.insertAttachmentImage(response.data?.name, response.data?.id, command)
+				this.insertAttachmentImage(response.data?.name, response.data?.id)
 			}).catch((error) => {
 				console.error(error)
 				showError(error?.response?.data?.error)
@@ -423,43 +419,21 @@ export default {
 				this.uploadingImage = false
 			})
 		},
-		showImagePrompt(command) {
+		showImagePrompt() {
 			const currentUser = getCurrentUser()
 			if (!currentUser) {
 				return
 			}
 			OC.dialogs.filepicker(t('text', 'Insert an image'), (file) => {
-				this.onImagePathSubmit(file, command)
+				this.onImagePathSubmit(file)
 			}, false, [], true, undefined, this.imagePath)
 		},
-		insertAttachmentImage(name, fileId, command) {
+		insertAttachmentImage(name, fileId) {
 			const src = 'text://image?imageFileName=' + encodeURIComponent(name)
-			command({
-				src,
-				// simply get rid of brackets to make sure link text is valid
-				// as it does not need to be unique and matching the real file name
-				alt: name.replaceAll(/[[\]]/g, ''),
-			})
-		},
-		showLinkPrompt(command) {
-			const currentUser = getCurrentUser()
-			if (!currentUser) {
-				return
-			}
-			const _command = command
-			OC.dialogs.filepicker('Insert a link', (file) => {
-				const client = OC.Files.getClient()
-				client.getFileInfo(file).then((_status, fileInfo) => {
-					this.lastLinkPath = fileInfo.path
-					const path = this.optimalPathTo(`${fileInfo.path}/${fileInfo.name}`)
-					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
-					const href = `${encodedPath}?fileId=${fileInfo.id}`
-
-					_command({
-						href,
-					})
-				})
-			}, false, [], true, undefined, this.linkPath)
+			// simply get rid of brackets to make sure link text is valid
+			// as it does not need to be unique and matching the real file name
+			const alt = name.replaceAll(/[[\]]/g, '')
+			this.editor.chain().setImage({ src, alt })
 		},
 		optimalPathTo(targetFile) {
 			const absolutePath = targetFile.split('/')
