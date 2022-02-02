@@ -23,52 +23,50 @@
 <template>
 	<BubbleMenu
 		:editor="editor"
-		:tippy-options="{onHide: onHide, onShown: onShown, placement: 'bottom'}">
-		<div class="menububble"
-			:class="{ 'is-active': isVisible }">
-			<!-- :style="bubblePosition(menu)"> -->
-			<form v-if="linkMenuIsActive" class="menububble__form" @submit.prevent="setLinkUrl()">
-				<input ref="linkInput"
-					v-model="linkUrl"
-					class="menububble__input"
-					type="text"
-					placeholder="https://"
-					@keydown.esc="hideLinkMenu">
-				<button class="menububble__button icon-confirm"
-					type="button"
-					tabindex="0"
-					@click="setLinkUrl()" />
-			</form>
+		:tippy-options="{onHide: onHide, onShown: onShown, placement: 'bottom'}"
+		class="menububble"
+		:class="{ 'is-active': isVisible }">
+		<form v-if="linkMenuIsActive" class="menububble__form" @submit.prevent="setLinkUrl()">
+			<input ref="linkInput"
+				v-model="linkUrl"
+				class="menububble__input"
+				type="text"
+				placeholder="https://"
+				@keydown.esc="hideLinkMenu">
+			<button class="menububble__button icon-confirm"
+				type="button"
+				tabindex="0"
+				@click="setLinkUrl()" />
+		</form>
 
-			<template v-else>
-				<button
-					class="menububble__button"
-					:class="{ 'is-active': isActive('link') }"
-					@click="showLinkMenu()">
-					<span class="icon-link" />
-					<span class="menububble__buttontext">
-						{{ isActive('link') ? t('text', 'Update Link') : t('text', 'Add Link') }}
-					</span>
-				</button>
-				<button v-if="!isUsingDirectEditing"
-					class="menububble__button"
-					:class="{ 'is-active': isActive('link') }"
-					@click="selectFile()">
-					<span class="icon-file" />
-					<span class="menububble__buttontext">{{ t('text', 'Link file') }}</span>
-				</button>
-				<button
-					v-if="isActive('link')"
-					class="menububble__button"
-					:class="{ 'is-active': isActive('link') }"
-					@click="removeLinkUrl()">
-					<span class="icon-delete" />
-					<span class="menububble__buttontext">
-						{{ t('text', 'Remove Link') }}
-					</span>
-				</button>
-			</template>
-		</div>
+		<template v-else>
+			<button
+				class="menububble__button"
+				:class="{ 'is-active': isActive('link') }"
+				@click="showLinkMenu()">
+				<span class="icon-link" />
+				<span class="menububble__buttontext">
+					{{ isActive('link') ? t('text', 'Update Link') : t('text', 'Add Link') }}
+				</span>
+			</button>
+			<button v-if="!isUsingDirectEditing"
+				class="menububble__button"
+				:class="{ 'is-active': isActive('link') }"
+				@click="selectFile()">
+				<span class="icon-file" />
+				<span class="menububble__buttontext">{{ t('text', 'Link file') }}</span>
+			</button>
+			<button
+				v-if="isActive('link')"
+				class="menububble__button"
+				:class="{ 'is-active': isActive('link') }"
+				@click="removeLinkUrl()">
+				<span class="icon-delete" />
+				<span class="menububble__buttontext">
+					{{ t('text', 'Remove Link') }}
+				</span>
+			</button>
+		</template>
 	</BubbleMenu>
 </template>
 
@@ -112,21 +110,6 @@ export default {
 			isUsingDirectEditing: loadState('text', 'directEditingToken', null) !== null,
 			isVisible: false,
 		}
-	},
-	computed: {
-
-		// Minimum left value for the bubble so that it stays inside the editor.
-		// the width of the menububble changes depending on its state
-		// during the bubblePosition calculation it has not been rendered yet.
-		// so we have to hard code the minimum.
-		minLeft() {
-			if (this.linkMenuIsActive || !this.isActive('link')) {
-				return 150
-			} else {
-				return 225
-			}
-		},
-
 	},
 	methods: {
 		showLinkMenu() {
@@ -188,14 +171,6 @@ export default {
 		removeLinkUrl() {
 			this.editor.chain().unsetLink().focus().run()
 		},
-		bubblePosition(menu) {
-			const left = Math.max(this.minLeft, menu.left)
-			const offset = this.contentWrapper?.scrollTop || 0
-			return {
-				top: `${menu.top + offset + 5}px`,
-				left: `${left}px`,
-			}
-		},
 		isActive(selector, args = {}) {
 			return this.editor.isActive(selector, args)
 		},
@@ -206,7 +181,6 @@ export default {
 
 <style scoped lang="scss">
 	.menububble {
-		position: absolute;
 		display: flex;
 		z-index: 10020;
 		background: var(--color-main-background-translucent);
@@ -217,7 +191,6 @@ export default {
 		margin-left: 10px;
 		visibility: hidden;
 		opacity: 0;
-		transform: translateX(-50%);
 		transition: opacity 0.2s, visibility 0.2s;
 		height: 44px;
 
