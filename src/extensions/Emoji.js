@@ -22,18 +22,20 @@
 
 import { Extension } from '@tiptap/core'
 
-export default class Emoji extends Extension {
+const Emoji = Extension.create({
 
 	get name() {
 		return 'emoji'
-	}
+	},
 
-}
+	addCommands() {
+		return {
+			emoji: (emoji) => ({ commands }) => {
+				return commands.insertContent(emoji)
+			},
+		}
+	},
 
-/* Not sure if we still need this... it looks like it's just an alias for insertContent
-	commands() {
-		return emoji => insertText(emoji)
-	}
+})
 
-}
-*/
+export default Emoji

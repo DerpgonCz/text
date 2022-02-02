@@ -176,7 +176,6 @@ export default [
 			return command.toggleCodeBlock()
 		},
 	},
-	/* FIXME: bring these back
 	{
 		label: t('text', 'Emoji picker'),
 		class: 'icon-emoji',
@@ -184,5 +183,4 @@ export default [
 			return command.emoji(emojiObject)
 		},
 	},
-	*/
 ]

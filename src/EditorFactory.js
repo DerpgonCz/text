@@ -31,7 +31,7 @@ import OrderedList from '@tiptap/extension-ordered-list'
 import { Editor } from '@tiptap/core'
 import { Strong, Italic, Strike, Link, Underline } from './marks'
 import { Image, PlainTextDocument, BulletList, ListItem } from './nodes'
-import { Markdown } from './extensions'
+import { Markdown, Emoji } from './extensions'
 // import { Image, PlainTextDocument, ListItem, BulletList } from './nodes'
 import { translate as t } from '@nextcloud/l10n'
 
@@ -74,6 +74,7 @@ const createEditor = ({ content, onCreate, onUpdate, extensions, enableRichEditi
 			ListItem,
 			Underline,
 			Image.configure({ currentDirectory, inline: true }),
+			Emoji,
 			Placeholder.configure({
 				emptyNodeClass: 'is-empty',
 				placeholder: t('text', 'Add notes, lists or links …'),

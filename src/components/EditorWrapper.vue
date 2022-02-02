@@ -88,7 +88,7 @@ import { createMarkdownSerializer } from './../extensions/Markdown'
 import markdownit from './../markdownit'
 
 import { EditorContent } from '@tiptap/vue-2'
-// import { Emoji, UserColor } from './../extensions'
+// import { UserColor } from './../extensions'
 import { Collaboration, Keymap } from './../extensions'
 import isMobile from './../mixins/isMobile'
 import store from './../mixins/store'
@@ -385,7 +385,6 @@ export default {
 										return session?.userId ? session.userId : session?.guestName
 									},
 								}),
-								new Emoji(),
 							],
 							*/
 							enableRichEditing: this.isRichEditor,

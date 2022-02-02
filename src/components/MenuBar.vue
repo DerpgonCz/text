@@ -454,6 +454,8 @@ export default {
 		},
 		addEmoji(icon, emojiObject) {
 			return icon.action(this.editor.chain(), emojiObject)
+				.focus()
+				.run()
 		},
 		keysString(keyChar, modifiers = []) {
 			const translations = {
