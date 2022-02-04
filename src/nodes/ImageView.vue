@@ -172,7 +172,6 @@ export default {
 			return
 		}
 		const img = new Image()
-		img.src = this.imageUrl
 		img.onload = () => {
 			this.imageLoaded = true
 		}
@@ -181,6 +180,7 @@ export default {
 			this.imageLoaded = false
 			this.loaded = true
 		}
+		img.src = this.imageUrl
 	},
 	methods: {
 		updateAlt() {
